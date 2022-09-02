@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Rinwasyu
+# Copyright 2021,2022 Rinwasyu
 # 
 # This file is part of neo-maikura-modoki.
 # 
@@ -34,7 +34,7 @@ world_config = {
 	"block_size": 1,
 }
 
-is_world_updated = False
+brightness_ssbo = None
 
 def loadFile(file_path):
 	with open(file_path, "rb") as f:
@@ -295,7 +295,7 @@ def mouse_button_callback(window, button, action, mods):
 	return
 
 def create_block():
-	global block, is_world_updated
+	global block
 	x = player.x
 	y = player.y + player.height*0.9
 	z = player.z
@@ -328,13 +328,13 @@ def create_block():
 			else:
 				block[int(bx)][int(by)][int(bz)] = player.holding
 				update_brightness(int(bx), int(by), int(bz), True)
+				update_brightness_ssbo(int(x), int(y), int(z))
 				print("created! (", int(bx), ",", int(by), ",", int(bz), ")")
-				is_world_updated = True
 				#add_block_visibility(int(bx), int(by), int(bz), -1)
 			return
 
 def remove_block():
-	global block, is_world_updated
+	global block
 	x = player.x
 	y = player.y + player.height*0.9
 	z = player.z
@@ -353,8 +353,8 @@ def remove_block():
 		if block[int(x)][int(y)][int(z)] > 0:
 			block[int(x)][int(y)][int(z)] = 0
 			update_brightness(int(x), int(y), int(z), False)
+			update_brightness_ssbo(int(x), int(y), int(z))
 			print("removed (", int(x), ",", int(y), ",", int(z), ")")
-			is_world_updated = True
 			return
 
 def update_brightness(x:int, y:int, z:int, is_block_created:bool):
@@ -421,10 +421,11 @@ def update_brightness(x:int, y:int, z:int, is_block_created:bool):
 				if block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] != -1:
 					block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] = space_brightness[x][y][z]
 
+
 def create_world(width, height, depth):
 	global block, block_brightness, space_brightness
 	block = [[[0] * depth for i in range(height)] for j in range(width)]
-	block_brightness = [[[[-1] * 24 for i in range(depth)] for j in range(height)] for k in range(width)]
+	block_brightness = [[[[-1] * 6 for i in range(depth)] for j in range(height)] for k in range(width)]
 	space_brightness = [[[1] * depth for i in range(height)] for j in range(width)]
 	for i in range(width):
 		for j in range(10):
@@ -542,20 +543,6 @@ def get_voxels_texture_coords():
 					])
 	return texture_coords
 
-def get_voxels_brightness():
-	width = world_config["width"]
-	height = world_config["height"]
-	depth = world_config["depth"]
-	brightness = []
-	for i in range(width):
-		for j in range(height):
-			for k in range(depth):
-				for l in range(6):
-					brightness.append([
-							block_brightness[i][j][k][l]
-						])
-	return brightness
-
 def create_voxels_vao():
 	vao = glGenVertexArrays(1)
 	glBindVertexArray(vao)		
@@ -563,7 +550,7 @@ def create_voxels_vao():
 	vertices = np.array(get_voxels_vertices(), dtype=np.float32)
 	indices = np.array(get_voxels_indices(), dtype=np.uint32)
 	texture_coords = np.array(get_voxels_texture_coords(), dtype=np.float32)
-	brightness = np.array(get_voxels_brightness(), dtype=np.float32)
+	brightness = np.array(block_brightness, dtype=np.float32)
 	
 	glEnableVertexAttribArray(0)
 	vbo = glGenBuffers(1)
@@ -605,13 +592,18 @@ def draw_voxels(program, vao):
 	
 	return
 
-def update_brightness_ssbo(brightness_ssbo):
+def update_brightness_ssbo(x, y, z):
+	global brightness_ssbo, world_config
+	
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, brightness_ssbo)
 	
-	brightness = np.array(get_voxels_brightness(), dtype=np.float32)
-	
-	# update all brightness data
-	glBufferData(GL_SHADER_STORAGE_BUFFER, brightness.nbytes, brightness, GL_DYNAMIC_DRAW)
+	# update brightness data
+	for i in range(x-1, x+2):
+		for j in range(y-1, y+2):
+			for k in range(z-1, z+2):
+				if i >= 0 and j >= 0 and k >= 0 and i < world_config["width"] and j < world_config["height"] and k < world_config["depth"]:
+					brightness_updated = np.array(block_brightness[i][j][k], dtype=np.float32)
+					glBufferSubData(GL_SHADER_STORAGE_BUFFER, 4 * 6 * (i*world_config["height"]*world_config["depth"] + j*world_config["depth"] + k), 4 * 6, brightness_updated)
 	
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, brightness_ssbo)
 	
@@ -654,6 +646,7 @@ def main():
 	voxels_program = createProgram("shaders/voxel.vert", "shaders/voxel.frag")
 	
 	# create vao, vbo, ebo and ssbo
+	global brightness_ssbo
 	(voxels_vao, voxels_vbo, voxels_ebo, texture_vbo, brightness_ssbo) = create_voxels_vao()
 	
 	# clear
@@ -671,7 +664,6 @@ def main():
 	fps = 0
 	last_time = glfw.get_time()
 	
-	global is_world_updated
 	# main loop
 	while not glfw.window_should_close(window):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -680,10 +672,6 @@ def main():
 		draw_voxels(voxels_program, voxels_vao)
 		
 		player.tick()
-		
-		if is_world_updated:
-			update_brightness_ssbo(brightness_ssbo)
-			is_world_updated = False
 		
 		glfw.swap_buffers(window)
 		glfw.wait_events_timeout(1e-2)
