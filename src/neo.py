@@ -101,7 +101,7 @@ class Player:
 		self.vx = 0
 		self.vy = 0
 		self.vz = 0
-		self.speed = 0.01
+		self.speed = 0.02
 		self.rx = rx
 		self.ry = ry
 		self.hand_anim = 0
@@ -130,10 +130,10 @@ class Player:
 			self.vx += diff_cos_ry
 			self.vz += diff_sin_ry
 		if keystat.JUMP:
-			self.vy = 0.025
+			self.vy = 0.065
 			keystat.JUMP = False
 		else:
-			self.vy -= 0.0003
+			self.vy -= 0.002
 		if keystat.LAND:
 			if self.vy > 0:
 				self.vy *= -1
@@ -450,36 +450,37 @@ def get_voxels_vertices():
 	width = world_config["width"]
 	height = world_config["height"]
 	depth = world_config["depth"]
+	block_size = world_config["block_size"]
 	vertices = []
 	for i in range(width):
 		for j in range(height):
 			for k in range(depth):
 				vertices.append([
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (1.0+k)*world_config["block_size"], 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (1.0+k)*block_size, 1.0,
 						
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(-0.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (-0.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
-						(1.0+i)*world_config["block_size"], (1.0+j)*world_config["block_size"], (-0.0+k)*world_config["block_size"], 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(-0.0+i)*block_size, (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (-0.0+j)*block_size, (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
+						(1.0+i)*block_size,  (1.0+j)*block_size,  (-0.0+k)*block_size, 1.0,
 					])
 	return vertices
 
@@ -491,19 +492,20 @@ def get_voxels_indices():
 	for i in range(width):
 		for j in range(height):
 			for k in range(depth):
+				position = i*height*depth+j*depth+k
 				indices.append([
-						0+(i*height*depth+j*depth+k)*24, 3+(i*height*depth+j*depth+k)*24, 6+(i*height*depth+j*depth+k)*24, # 手前 0-1-2, 2-3-0
-						6+(i*height*depth+j*depth+k)*24, 9+(i*height*depth+j*depth+k)*24, 0+(i*height*depth+j*depth+k)*24,
-						1+(i*height*depth+j*depth+k)*24, 12+(i*height*depth+j*depth+k)*24, 15+(i*height*depth+j*depth+k)*24, # 左側 0-4-5, 5-1-0
-						15+(i*height*depth+j*depth+k)*24, 4+(i*height*depth+j*depth+k)*24, 1+(i*height*depth+j*depth+k)*24,
-						2+(i*height*depth+j*depth+k)*24, 10+(i*height*depth+j*depth+k)*24, 21+(i*height*depth+j*depth+k)*24, # 上側 0-3-7, 7-4-0
-						21+(i*height*depth+j*depth+k)*24, 13+(i*height*depth+j*depth+k)*24, 2+(i*height*depth+j*depth+k)*24,
-						11+(i*height*depth+j*depth+k)*24, 7+(i*height*depth+j*depth+k)*24, 18+(i*height*depth+j*depth+k)*24, # 右側 3-2-6, 6-7-3
-						18+(i*height*depth+j*depth+k)*24, 22+(i*height*depth+j*depth+k)*24, 11+(i*height*depth+j*depth+k)*24,
-						5+(i*height*depth+j*depth+k)*24, 16+(i*height*depth+j*depth+k)*24, 19+(i*height*depth+j*depth+k)*24, # 下側 1-5-6, 6-2-1
-						19+(i*height*depth+j*depth+k)*24, 8+(i*height*depth+j*depth+k)*24, 5+(i*height*depth+j*depth+k)*24,
-						14+(i*height*depth+j*depth+k)*24, 23+(i*height*depth+j*depth+k)*24, 20+(i*height*depth+j*depth+k)*24, # 奥側 4-7-6, 6-5-4
-						20+(i*height*depth+j*depth+k)*24, 17+(i*height*depth+j*depth+k)*24, 14+(i*height*depth+j*depth+k)*24
+						0+position*24,  3+position*24,  6+position*24,  # 手前 0-1-2, 2-3-0
+						6+position*24,  9+position*24,  0+position*24,
+						1+position*24,  12+position*24, 15+position*24, # 左側 0-4-5, 5-1-0
+						15+position*24, 4+position*24,  1+position*24,
+						2+position*24,  10+position*24, 21+position*24, # 上側 0-3-7, 7-4-0
+						21+position*24, 13+position*24, 2+position*24,
+						11+position*24, 7+position*24,  18+position*24, # 右側 3-2-6, 6-7-3
+						18+position*24, 22+position*24, 11+position*24,
+						5+position*24,  16+position*24, 19+position*24, # 下側 1-5-6, 6-2-1
+						19+position*24, 8+position*24,  5+position*24,
+						14+position*24, 23+position*24, 20+position*24, # 奥側 4-7-6, 6-5-4
+						20+position*24, 17+position*24, 14+position*24
 					])
 	return indices
 
@@ -592,7 +594,7 @@ def draw_voxels(program, vao):
 	
 	return
 
-def update_brightness_ssbo(x, y, z):
+def update_brightness_ssbo(x:int, y:int, z:int):
 	global brightness_ssbo, world_config
 	
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, brightness_ssbo)
@@ -674,7 +676,7 @@ def main():
 		player.tick()
 		
 		glfw.swap_buffers(window)
-		glfw.wait_events_timeout(1e-2)
+		glfw.wait_events_timeout(1e-3)
 		
 		# calculate fps
 		current_time = glfw.get_time()
