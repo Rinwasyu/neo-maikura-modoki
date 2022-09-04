@@ -34,8 +34,6 @@ world_config = {
 	"block_size": 1,
 }
 
-brightness_ssbo = None
-
 def loadFile(file_path):
 	with open(file_path, "rb") as f:
 		return f.read()
@@ -327,10 +325,8 @@ def create_block():
 				return
 			else:
 				block[int(bx)][int(by)][int(bz)] = player.holding
-				update_brightness(int(bx), int(by), int(bz), True)
-				update_brightness_ssbo(int(x), int(y), int(z))
+				update_block_ssbo(int(bx), int(by), int(bz))
 				print("created! (", int(bx), ",", int(by), ",", int(bz), ")")
-				#add_block_visibility(int(bx), int(by), int(bz), -1)
 			return
 
 def remove_block():
@@ -352,90 +348,17 @@ def remove_block():
 			return
 		if block[int(x)][int(y)][int(z)] > 0:
 			block[int(x)][int(y)][int(z)] = 0
-			update_brightness(int(x), int(y), int(z), False)
-			update_brightness_ssbo(int(x), int(y), int(z))
+			update_block_ssbo(int(x), int(y), int(z))
 			print("removed (", int(x), ",", int(y), ",", int(z), ")")
 			return
 
-def update_brightness(x:int, y:int, z:int, is_block_created:bool):
-	#print("update_brightness x:{}, y:{}, z:{}".format(x, y, z))
-	global block_brightness, space_brightness
-	space_offset = []
-	for tmp_x in [-1, 0, 1]:
-		for tmp_y in [-1, 0, 1]:
-			for tmp_z in [-1, 0, 1]:
-				if tmp_x != 0 or tmp_y != 0 or tmp_z != 0:
-					space_offset.append([tmp_x, tmp_y, tmp_z])
-	voxel_offset = [
-			[0, 0, 1], [-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, -1]
-		]
-	surface_index = [
-			[5], [3], [4], [1],  [2], [0]
-		]
-	if is_block_created:
-		space_brightness_1 = 0
-		space_brightness_2 = 0
-		for i in range(len(space_offset)):
-			if x+space_offset[i][0] < 0 or x+space_offset[i][0] >= world_config["width"] or \
-					y+space_offset[i][1] < 0 or y+space_offset[i][1] >= world_config["height"] or \
-					z+space_offset[i][2] < 0 or z+space_offset[i][2] >= world_config["depth"]:
-				continue
-			space_brightness_2 = max(space_brightness_2, min(space_brightness_1, space_brightness[x+space_offset[i][0]][y+space_offset[i][1]][z+space_offset[i][2]]))
-			space_brightness_1 = max(space_brightness_1, space_brightness[x+space_offset[i][0]][y+space_offset[i][1]][z+space_offset[i][2]])
-		space_brightness[x][y][z] = (space_brightness_1*1.5 + space_brightness_2*0.5) / 2
-		for i in range(6):
-			block_brightness[x][y][z][i] = space_brightness[x][y][z]
-		for i in range(len(voxel_offset)):
-			if x+voxel_offset[i][0] < 0 or x+voxel_offset[i][0] >= world_config["width"] or \
-					y+voxel_offset[i][1] < 0 or y+voxel_offset[i][1] >= world_config["height"] or \
-					z+voxel_offset[i][2] < 0 or z+voxel_offset[i][2] >= world_config["depth"]:
-				continue
-			for j in range(len(surface_index[i])):
-				if block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] != -1:
-					block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] = 0
-			for j in range(len(voxel_offset)):
-				if x+voxel_offset[j][0] < 0 or x+voxel_offset[j][0] >= world_config["width"] or \
-						y+voxel_offset[j][1] < 0 or y+voxel_offset[j][1] >= world_config["height"] or \
-						z+voxel_offset[j][2] < 0 or z+voxel_offset[j][2] >= world_config["depth"]:
-					continue
-				
-	else:
-		for i in range(6):
-			block_brightness[x][y][z][i] = -1
-		space_brightness_1 = 0
-		space_brightness_2 = 0
-		for i in range(len(space_offset)):
-			if x+space_offset[i][0] < 0 or x+space_offset[i][0] >= world_config["width"] or \
-					y+space_offset[i][1] < 0 or y+space_offset[i][1] >= world_config["height"] or \
-					z+space_offset[i][2] < 0 or z+space_offset[i][2] >= world_config["depth"]:
-				continue
-			space_brightness_2 = max(space_brightness_2, min(space_brightness_1, space_brightness[x+space_offset[i][0]][y+space_offset[i][1]][z+space_offset[i][2]]))
-			space_brightness_1 = max(space_brightness_1, space_brightness[x+space_offset[i][0]][y+space_offset[i][1]][z+space_offset[i][2]])
-		space_brightness[x][y][z] = (space_brightness_1*1.5 + space_brightness_2*0.5) / 2
-		for i in range(len(voxel_offset)):
-			if x+voxel_offset[i][0] < 0 or x+voxel_offset[i][0] >= world_config["width"] or \
-					y+voxel_offset[i][1] < 0 or y+voxel_offset[i][1] >= world_config["height"] or \
-					z+voxel_offset[i][2] < 0 or z+voxel_offset[i][2] >= world_config["depth"]:
-				continue
-			for j in range(len(surface_index[i])):
-				if block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] != -1:
-					block_brightness[x+voxel_offset[i][0]][y+voxel_offset[i][1]][z+voxel_offset[i][2]][surface_index[i][j]] = space_brightness[x][y][z]
-
-
 def create_world(width, height, depth):
-	global block, block_brightness, space_brightness
-	block = [[[0] * depth for i in range(height)] for j in range(width)]
-	block_brightness = [[[[-1] * 6 for i in range(depth)] for j in range(height)] for k in range(width)]
-	space_brightness = [[[1] * depth for i in range(height)] for j in range(width)]
+	global block
+	block = np.array([[[0] * depth for i in range(height)] for j in range(width)], dtype=np.int32)
 	for i in range(width):
 		for j in range(10):
 			for k in range(depth):
 				block[i][j][k] = 1
-				for l in range(6):
-					block_brightness[i][j][k][l] = 0
-				if j == 9:
-					block_brightness[i][j][k][2] = 1
-				space_brightness[i][j][k] = 0
 	return
 
 def init_game():
@@ -552,7 +475,6 @@ def create_voxels_vao():
 	vertices = np.array(get_voxels_vertices(), dtype=np.float32)
 	indices = np.array(get_voxels_indices(), dtype=np.uint32)
 	texture_coords = np.array(get_voxels_texture_coords(), dtype=np.float32)
-	brightness = np.array(block_brightness, dtype=np.float32)
 	
 	glEnableVertexAttribArray(0)
 	vbo = glGenBuffers(1)
@@ -571,17 +493,17 @@ def create_voxels_vao():
 	glBufferData(GL_ARRAY_BUFFER, texture_coords.nbytes, texture_coords, GL_DYNAMIC_DRAW)
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, None)
 	
-	brightness_ssbo = glGenBuffers(1)
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, brightness_ssbo)
-	glBufferData(GL_SHADER_STORAGE_BUFFER, brightness.nbytes, brightness, GL_DYNAMIC_DRAW)
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, brightness_ssbo)
+	block_ssbo = glGenBuffers(1)
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, block_ssbo)
+	glBufferData(GL_SHADER_STORAGE_BUFFER, block.nbytes, block, GL_DYNAMIC_DRAW)
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, block_ssbo)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0)
 	
 	glBindVertexArray(0)
 	
-	return (vao, vbo, ebo, texture_vbo, brightness_ssbo)
+	return (vao, vbo, ebo, texture_vbo, block_ssbo)
 
 def draw_voxels(program, vao):
 	glUseProgram(program)
@@ -594,20 +516,11 @@ def draw_voxels(program, vao):
 	
 	return
 
-def update_brightness_ssbo(x:int, y:int, z:int):
-	global brightness_ssbo, world_config
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, brightness_ssbo)
-	
-	# update brightness data
-	for i in range(x-1, x+2):
-		for j in range(y-1, y+2):
-			for k in range(z-1, z+2):
-				if i >= 0 and j >= 0 and k >= 0 and i < world_config["width"] and j < world_config["height"] and k < world_config["depth"]:
-					brightness_updated = np.array(block_brightness[i][j][k], dtype=np.float32)
-					glBufferSubData(GL_SHADER_STORAGE_BUFFER, 4 * 6 * (i*world_config["height"]*world_config["depth"] + j*world_config["depth"] + k), 4 * 6, brightness_updated)
-	
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, brightness_ssbo)
+def update_block_ssbo(x:int, y:int, z:int):
+	# update block data
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, block_ssbo)
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 4*(x*world_config["height"]*world_config["depth"] + y*world_config["depth"] + z), 4, block[x][y][z])
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, block_ssbo)
 	
 	return
 
@@ -648,8 +561,8 @@ def main():
 	voxels_program = createProgram("shaders/voxel.vert", "shaders/voxel.frag")
 	
 	# create vao, vbo, ebo and ssbo
-	global brightness_ssbo
-	(voxels_vao, voxels_vbo, voxels_ebo, texture_vbo, brightness_ssbo) = create_voxels_vao()
+	global block_ssbo
+	(voxels_vao, voxels_vbo, voxels_ebo, texture_vbo, block_ssbo) = create_voxels_vao()
 	
 	# clear
 	glClearColor(0.6, 0.8, 1, 1)

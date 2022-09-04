@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Rinwasyu
+ * Copyright 2021,2022 Rinwasyu
  * 
  * This file is part of neo-maikura-modoki.
  * 
@@ -20,8 +20,8 @@
 
 #version 460 core
 
-layout(std430, binding=0) buffer brightness_ssbo {
-	float brightness[];
+layout(std430, binding=0) buffer block_ssbo {
+	int block[];
 } ssbo;
 
 in vec2 uv;
@@ -31,14 +31,11 @@ out vec4 frag_color;
 uniform sampler2D texture_sampler;
 
 void main(void) {
-	if (ssbo.brightness[gl_PrimitiveID/2] >= 0.0) {
-		frag_color = mix(vec4(0,0,0,1), texture(texture_sampler, uv), ssbo.brightness[gl_PrimitiveID/2]);
+	if (ssbo.block[gl_PrimitiveID/12] != 0) {
+		frag_color = texture(texture_sampler, uv);
 		if (uv.x < 0.01 || uv.x > 0.99 || uv.y < 0.01 || uv.y > 0.99)
-			frag_color = mix(vec4(0, 0, 0, 1), vec4(0.3, 1, 0.3, 1), ssbo.brightness[gl_PrimitiveID/2]);
+			frag_color = vec4(0.3, 1, 0.3, 1);
 	} else {
-		//if (uv.x < 0.02 || uv.x > 0.98 || uv.y < 0.02 || uv.y > 0.98)
-		//	frag_color = vec4(1, 1, 1, 0.1);
-		//else
-			discard;
+		discard;
 	}
 }
