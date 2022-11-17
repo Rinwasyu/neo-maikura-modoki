@@ -468,6 +468,23 @@ def get_voxels_texture_coords():
 					])
 	return texture_coords
 
+def get_crosshair_vertices():
+	vertices = [
+			-0.002,  0.02, -1.0, 1.0,
+			-0.002, -0.02, -1.0, 1.0,
+			 0.002, -0.02, -1.0, 1.0,
+			 0.002,  0.02, -1.0, 1.0,
+			-0.02,  0.002, -1.0, 1.0,
+			-0.02, -0.002, -1.0, 1.0,
+			 0.02, -0.002, -1.0, 1.0,
+			 0.02,  0.002, -1.0, 1.0,
+		]
+	return vertices
+
+def get_crosshair_indices():
+	indices = [0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4]
+	return indices
+
 def create_voxels_vao():
 	vao = glGenVertexArrays(1)
 	glBindVertexArray(vao)		
@@ -505,6 +522,29 @@ def create_voxels_vao():
 	
 	return (vao, vbo, ebo, texture_vbo, block_ssbo)
 
+def create_crosshair_vao():
+	vao = glGenVertexArrays(1)
+	glBindVertexArray(vao)
+	
+	vertices = np.array(get_crosshair_vertices(), dtype=np.float32)
+	indices = np.array(get_crosshair_indices(), dtype=np.uint32)
+	
+	glEnableVertexAttribArray(0)
+	vbo = glGenBuffers(1)
+	glBindBuffer(GL_ARRAY_BUFFER, vbo)
+	glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_DYNAMIC_DRAW)
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, None)
+	
+	ebo = glGenBuffers(1)
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices, GL_DYNAMIC_DRAW)
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0)
+	
+	glBindVertexArray(0)
+	
+	return (vao, vbo, ebo)
+
 def draw_voxels(program, vao):
 	glUseProgram(program)
 	glBindVertexArray(vao)
@@ -513,6 +553,14 @@ def draw_voxels(program, vao):
 	glUniform1f(glGetUniformLocation(program, "eye_rx"), player.rx/180*math.pi)
 	glUniform1f(glGetUniformLocation(program, "eye_ry"), -player.ry/180*math.pi)
 	glDrawElements(GL_TRIANGLES, world_config["width"]*world_config["height"]*world_config["depth"]*36, GL_UNSIGNED_INT, None)
+	
+	return
+
+def draw_crosshair(program, vao):
+	glUseProgram(program)
+	glBindVertexArray(vao)
+	
+	glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, None)
 	
 	return
 
@@ -559,10 +607,12 @@ def main():
 	
 	# compile and link shaders
 	voxels_program = createProgram("shaders/voxel.vert", "shaders/voxel.frag")
+	crosshair_program = createProgram("shaders/crosshair.vert", "shaders/crosshair.frag")
 	
 	# create vao, vbo, ebo and ssbo
 	global block_ssbo
 	(voxels_vao, voxels_vbo, voxels_ebo, texture_vbo, block_ssbo) = create_voxels_vao()
+	(crosshair_vao, crosshair_vbo, crosshair_ebo) = create_crosshair_vao()
 	
 	# clear
 	glClearColor(0.6, 0.8, 1, 1)
@@ -585,6 +635,7 @@ def main():
 		
 		# draw voxels
 		draw_voxels(voxels_program, voxels_vao)
+		draw_crosshair(crosshair_program, crosshair_vao)
 		
 		player.tick()
 		
